@@ -1,0 +1,18 @@
+{
+  "name": "monolithic",
+  "version": "1.0.0",
+  "description": "- **Student Name:** [นายวรรธนะ คำมาลัย]\r - **Student ID:** [67543210023-7]\r - **Course:** ENGSE207 Software Architecture",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "sqlite3": "^5.1.7"
+  }
+}
