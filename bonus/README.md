@@ -1,105 +1,121 @@
-# 📚 Library Management System - Monolithic Architecture
+# Library Management System - Client-Server Architecture
 
-## 📋 Project Information
-- **Student Name:** [นายวรรธนะ คำมาลัย]
-- **Student ID:** [67543210023-7]
-- **Course:** ENGSE207 Software Architecture
+## Project Information
+- **Student Name:** นายวรรธนะ คำมาลัย
+- **Student ID:** 67543210023-7
+- **Course:** ENGSE207 - Bonus Exam
 
-## 🏗️ Architecture Overview
+## Architecture
 
-### What is Monolithic Architecture?
-A single unified application where all components (presentation, business logic, and data access) are packaged together and run as one process.
+### Overview
+This project demonstrates a modern **Client-Server Architecture** for a Library Management System, separating the presentation layer (Frontend) from the business logic layer (Backend).
 
-**Our 3-Layer Model:**
+### Before: Layered Architecture
+- Single monolithic application
+- Frontend + Backend tightly coupled
+- Limited scalability
+
+### After: Client-Server Architecture
+- **Backend:** REST API (Node.js + Express + SQLite)
+- **Frontend:** Web Client (HTML + CSS + JavaScript)
+- **Communication:** HTTP/JSON protocol
+- **Separation of Concerns:** Clear division between client and server
+
+## Project Structure
+
 ```
-┌──────────────────────────────────────┐
-│   PRESENTATION LAYER (HTTP/API)      │
-│  Routes → Controllers → Responses    │
-├──────────────────────────────────────┤
-│   BUSINESS LOGIC LAYER (Core Logic)  │
-│  Services → Validators → Rules       │
-├──────────────────────────────────────┤
-│   DATA ACCESS LAYER (Database)       │
-│  Repositories → Queries → SQLite     │
-└──────────────────────────────────────┘
+midterm-bonus-67543210023/
+├── bonus/
+│   ├── ARCHITECTURE.md          # Architecture documentation
+│   ├── README.md                # This file
+│   ├── backend/                 # REST API Server
+│   │   ├── package.json         # Dependencies
+│   │   ├── server.js            # Main server file
+│   │   ├── src/
+│   │   │   ├── presentation/    # Controllers & Routes
+│   │   │   │   ├── controllers/
+│   │   │   │   ├── middlewares/
+│   │   │   │   └── routes/
+│   │   │   ├── business/        # Services & Validators
+│   │   │   └── data/            # Repositories & Database
+│   │   └── API_TESTS.md         # API endpoint documentation
+│   └── frontend/                # Web Client
+│       ├── index.html           # Main HTML
+│       ├── css/
+│       │   └── style.css        # Styling
+│       └── js/
+│           ├── app.js           # Main application logic
+│           ├── api.js           # API client
+│           └── components/      # Modular components
 ```
 
-## 📂 Project Structure
-```
-MONOLITHIC UI/
-├── server.js                          # Entry point
-├── package.json                       # Dependencies
-├── library.db                         # SQLite database
-├── .gitignore                         # Git ignore
-├── README.md                          # This file
-├── ARCHITECTURE.md                    # Detailed architecture
-├── public/                            # Frontend
-│   ├── index.html                     # Main UI
-│   ├── css/style.css                  # Styles
-│   └── js/app.js                      # Frontend logic
-└── src/                               # Backend
-    ├── presentation/
-    │   ├── routes/bookRoutes.js       # API routes
-    │   ├── controllers/bookController.js
-    │   └── middlewares/errorHandler.js
-    ├── business/
-    │   ├── services/bookService.js    # Business logic
-    │   └── validators/bookValidator.js
-    └── data/
-        ├── repositories/bookRepository.js
-        └── database/connection.js
-```
-
-## 🎯 Features
-
-✅ **CRUD Operations** - Create, Read, Update, Delete books
-✅ **Borrow/Return** - Manage book lending
-✅ **Status Tracking** - Available / Borrowed status
-✅ **Statistics** - Total, Available, Borrowed counts
-✅ **Data Validation** - Input validation at business layer
-✅ **Error Handling** - Centralized error middleware
-✅ **Responsive UI** - Works on desktop and mobile
-✅ **SQLite Database** - Lightweight and easy to set up
-
-## 🚀 How to Run
+## How to Run
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
+- Node.js (v14+)
+- npm
+- Modern web browser
+- Internet connection to VM
 
-### Installation & Startup
+### Backend (Server - VM)
 ```bash
-# 1. Install dependencies
+cd backend
 npm install
-
-# 2. Start the server
 npm start
-
-# 3. Open in browser
-http://localhost:3000
-
-# Server runs on port 3000
-# Database: library.db (auto-created)
+# Server runs at: http://192.168.56.101:3000
+# API base: http://192.168.56.101:3000/api
 ```
 
-## 📝 API Endpoints
-
-### Get Books
+### Frontend (Client - Local)
 ```bash
-# Get all books
+cd frontend
+# Option 1: Open index.html directly in browser
+# Option 2: Use Python HTTP server
+python3 -m http.server 8000
+# Access: http://localhost:8000
+```
+
+## API Endpoints
+
+### Base URL
+```
+http://192.168.56.101:3000/api
+```
+
+### Books Management
+
+#### 1. Get All Books
+```bash
 GET /api/books
-
-# Get available books
 GET /api/books?status=available
-
-# Get borrowed books
 GET /api/books?status=borrowed
+```
+**Response:**
+```json
+{
+  "books": [
+    {
+      "id": 1,
+      "title": "Clean Code",
+      "author": "Robert C. Martin",
+      "isbn": "9780132350884",
+      "status": "available"
+    }
+  ],
+  "statistics": {
+    "available": 5,
+    "borrowed": 2,
+    "total": 7
+  }
+}
+```
 
-# Get specific book
+#### 2. Get Book by ID
+```bash
 GET /api/books/:id
 ```
 
-### Create Book
+#### 3. Create Book
 ```bash
 POST /api/books
 Content-Type: application/json
@@ -111,7 +127,7 @@ Content-Type: application/json
 }
 ```
 
-### Update Book
+#### 4. Update Book
 ```bash
 PUT /api/books/:id
 Content-Type: application/json
@@ -119,176 +135,87 @@ Content-Type: application/json
 {
   "title": "Updated Title",
   "author": "Updated Author",
-  "isbn": "new-isbn"
+  "isbn": "9780132350884"
 }
 ```
 
-### Borrow Book
+#### 5. Borrow Book
 ```bash
 PATCH /api/books/:id/borrow
 ```
 
-### Return Book
+#### 6. Return Book
 ```bash
 PATCH /api/books/:id/return
 ```
 
-### Delete Book
+#### 7. Delete Book
 ```bash
 DELETE /api/books/:id
 ```
 
-## 🧪 Testing with cURL
+## Features
 
-```bash
-# Get all books
-curl http://localhost:3000/api/books
+✅ **Frontend Features:**
+- View all books with pagination
+- Filter books by status (Available/Borrowed)
+- Add new book
+- Edit existing book
+- Borrow/Return book
+- Delete book
+- View book statistics (total, available, borrowed)
+- Responsive design
+- Loading states
 
-# Create a book
-curl -X POST http://localhost:3000/api/books \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Test Book","author":"Test Author","isbn":"1234567890"}'
+✅ **Backend Features:**
+- RESTful API endpoints
+- Input validation
+- Error handling with proper HTTP status codes
+- ISBN validation
+- SQLite database
+- Modular architecture (Controllers, Services, Repositories)
 
-# Borrow a book (ID 1)
-curl -X PATCH http://localhost:3000/api/books/1/borrow
+## Key Components
 
-# Return a book
-curl -X PATCH http://localhost:3000/api/books/1/return
+### Frontend
+- **app.js**: Main application logic and event handling
+- **api.js**: HTTP client for API communication
+- **bookForm.js**: Modal form for create/edit operations
+- **bookList.js**: Book list rendering component
+- **style.css**: Complete styling with responsive design
 
-# Update a book
-curl -X PUT http://localhost:3000/api/books/1 \
-  -H "Content-Type: application/json" \
-  -d '{"title":"New Title"}'
+### Backend
+- **Controllers**: Handle HTTP requests/responses
+- **Services**: Business logic and validation
+- **Repositories**: Database operations
+- **Middlewares**: Error handling, CORS
+- **Validators**: Input validation
 
-# Delete a book
-curl -X DELETE http://localhost:3000/api/books/1
-```
+## Error Handling
 
-## 📊 Response Format
+The application includes comprehensive error handling:
+- **400**: Bad Request (invalid input)
+- **404**: Not Found (book doesn't exist)
+- **409**: Conflict (business logic violation, e.g., deleting borrowed book)
+- **500**: Internal Server Error
 
-### Success Response
-```json
-{
-  "id": 1,
-  "title": "Clean Code",
-  "author": "Robert C. Martin",
-  "isbn": "9780132350884",
-  "status": "available",
-  "created_at": "2024-01-12T10:30:00Z"
-}
-```
+## Technologies Used
 
-### Error Response
-```json
-{
-  "error": "Error message describing the issue"
-}
-```
+### Backend
+- Node.js
+- Express.js
+- SQLite3
+- CORS middleware
 
-### Statistics Response
-```json
-{
-  "books": [...],
-  "statistics": {
-    "total": 10,
-    "available": 7,
-    "borrowed": 3
-  }
-}
-```
+### Frontend
+- HTML5
+- CSS3 (Grid, Flexbox, Animations)
+- Vanilla JavaScript (ES6+)
+- Fetch API
 
-## 🔧 Technology Stack
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Database:** SQLite3
-- **Frontend:** HTML5, CSS3, Vanilla JavaScript
-- **Architecture:** Monolithic (3-Layer)
+## Notes
 
-## 🎓 Architecture Layers Explained
-
-### Presentation Layer
-- Handles HTTP requests/responses
-- Routes and controllers manage API endpoints
-- Error middleware catches all errors
-- **Files:** bookRoutes.js, bookController.js, errorHandler.js
-
-### Business Logic Layer
-- Implements business rules
-- Validates input data
-- Manages book operations
-- Enforces constraints (e.g., can't delete borrowed books)
-- **Files:** bookService.js, bookValidator.js
-
-### Data Access Layer
-- Handles all database operations
-- Executes SQL queries
-- Provides data abstraction
-- **Files:** bookRepository.js, connection.js
-
-## ✨ Best Practices Implemented
-
-1. **Separation of Concerns** - Each layer has specific responsibility
-2. **Error Handling** - Centralized error middleware
-3. **Validation** - Input validation before processing
-4. **Repository Pattern** - Abstraction for data access
-5. **Async/Await** - Modern Promise handling
-6. **Try-Catch** - Proper error handling in controllers
-
-## 📚 Database Schema
-
-```sql
-CREATE TABLE books (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    author TEXT NOT NULL,
-    isbn TEXT UNIQUE NOT NULL,
-    status TEXT DEFAULT 'available',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-**Status Values:**
-- `available` - Ready to borrow
-- `borrowed` - Currently borrowed
-
-## 🐛 Error Handling
-
-| Status Code | Meaning | Example |
-|-------------|---------|---------|
-| 201 | Created | Book added successfully |
-| 400 | Bad Request | Invalid input data |
-| 404 | Not Found | Book doesn't exist |
-| 409 | Conflict | ISBN already exists |
-| 500 | Server Error | Database error |
-
-## 🎯 How It Works
-
-### Create Book Flow
-```
-1. User fills form and clicks "Save"
-2. Frontend sends POST request to /api/books
-3. bookController.createBook() receives request
-4. bookService.createBook() validates data
-5. bookRepository.create() inserts into database
-6. Response sent back to frontend
-7. UI updates with new book
-```
-
-### Borrow Book Flow
-```
-1. User clicks "Borrow" button
-2. Frontend sends PATCH to /api/books/:id/borrow
-3. Service checks if book is available
-4. If available: status updated to 'borrowed'
-5. If borrowed: returns error
-6. UI updates with new status
-```
-
-## 📖 For More Details
-See **ARCHITECTURE.md** for detailed architecture explanation and design patterns.
-
-## 👨‍💻 Created By
-ENGSE207 - Software Architecture (Sec 1)
-
-## 📄 License
-MIT
+- The server IP is configured to `192.168.56.101` (adjust as needed)
+- The database is automatically initialized on first run
+- All book data is persisted in SQLite
+- The API follows REST principles

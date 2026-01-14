@@ -1,102 +1,135 @@
-// Main Application Logic for Library Management
+// frontend/js/app.js
 let currentFilter = 'all';
 
-// Initialize app
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Library Management System - Client');
     setupEventListeners();
-    loadBooks();
+    await loadBooks();
 });
 
-// Setup event listeners
 function setupEventListeners() {
-    document.getElementById('add-btn').addEventListener('click', showAddModal);
-    
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    // 1. ปุ่มเพิ่มหนังสือ (ID ใน HTML คือ add-btn)
+    const addBtn = document.getElementById('add-btn');
+    if (addBtn) addBtn.addEventListener('click', () => showBookForm());
+
+    // 2. ปุ่มยกเลิก/ปิด Modal
+    const cancelBtn = document.getElementById('cancel-btn');
+    const closeSpan = document.querySelector('.close');
+    if (cancelBtn) cancelBtn.addEventListener('click', () => hideBookForm());
+    if (closeSpan) closeSpan.addEventListener('click', () => hideBookForm());
+
+    // 3. ระบบ Filter
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const filter = e.target.dataset.filter;
-            filterBooks(filter);
+            filterButtons.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            const filterType = e.target.getAttribute('data-filter');
+            currentFilter = filterType;
+            loadBooks(filterType === 'all' ? null : filterType);
         });
     });
-    
-    document.querySelector('.close').addEventListener('click', closeModal);
-    document.getElementById('cancel-btn').addEventListener('click', closeModal);
-    document.getElementById('book-form').addEventListener('submit', handleSubmit);
+
+    // 4. การส่งฟอร์ม
+    const bookForm = document.getElementById('book-form');
+    if (bookForm) bookForm.addEventListener('submit', handleFormSubmit);
 }
 
-// Load books
+// --- ฟังก์ชันจัดการ Modal ---
+function showBookForm(book = null) {
+    const modal = document.getElementById('book-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const form = document.getElementById('book-form');
+    
+    if (book) {
+        modalTitle.textContent = 'Edit Book';
+        document.getElementById('book-id').value = book.id;
+        document.getElementById('title').value = book.title;
+        document.getElementById('author').value = book.author;
+        document.getElementById('isbn').value = book.isbn;
+    } else {
+        modalTitle.textContent = 'Add New Book';
+        form.reset();
+        document.getElementById('book-id').value = '';
+    }
+    modal.style.display = 'block';
+}
+
+function hideBookForm() {
+    const modal = document.getElementById('book-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+// --- ฟังก์ชันจัดการข้อมูล ---
 async function loadBooks(status = null) {
     try {
         showLoading();
-        
-        const data = await api.getAllBooks(status);
-        
-        displayBooks(data.books);
-        updateStatistics(data.statistics);
-        
+        const result = await api.getAllBooks(status);
+        updateStatistics(result.statistics);
+        renderBookList(result.books);
         hideLoading();
     } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to load books: ' + error.message);
+        console.error('Error loading books:', error);
         hideLoading();
     }
 }
 
-// Display books
-function displayBooks(books) {
-    const container = document.getElementById('book-list');
-    
-    if (books.length === 0) {
-        container.innerHTML = '<div class="no-books">📚 No books found</div>';
-        return;
-    }
-    
-    container.innerHTML = books.map(book => createBookCard(book)).join('');
+async function borrowBook(id) {
+    if (!confirm('Borrow this book?')) return;
+    try {
+        await api.borrowBook(id);
+        await loadBooks(currentFilter === 'all' ? null : currentFilter);
+    } catch (error) { alert('Error borrowing book'); }
 }
 
-// Create book card HTML
-function createBookCard(book) {
-    return `
-        <div class="book-card">
-            <h3>${escapeHtml(book.title)}</h3>
-            <p class="author">👤 ${escapeHtml(book.author)}</p>
-            <p class="isbn">🔖 ISBN: ${escapeHtml(book.isbn)}</p>
-            <span class="status-badge status-${book.status}">
-                ${book.status === 'available' ? '✅' : '📖'} ${book.status.toUpperCase()}
-            </span>
-            <div class="actions">
-                ${book.status === 'available' 
-                    ? `<button class="btn btn-success" onclick="borrowBook(${book.id})">Borrow</button>`
-                    : `<button class="btn btn-warning" onclick="returnBook(${book.id})">Return</button>`
-                }
-                <button class="btn btn-secondary" onclick="editBook(${book.id})">Edit</button>
-                <button class="btn btn-danger" onclick="deleteBook(${book.id})">Delete</button>
-            </div>
-        </div>
-    `;
+async function returnBook(id) {
+    if (!confirm('Return this book?')) return;
+    try {
+        await api.returnBook(id);
+        await loadBooks(currentFilter === 'all' ? null : currentFilter);
+    } catch (error) { alert('Error returning book'); }
 }
 
-// Update statistics
+async function deleteBook(id) {
+    if (!confirm('Are you sure you want to delete this book?')) return;
+    try {
+        await api.deleteBook(id);
+        await loadBooks(currentFilter === 'all' ? null : currentFilter);
+    } catch (error) { alert('Error deleting book'); }
+}
+
+async function editBook(id) {
+    try {
+        const book = await api.getBookById(id);
+        showBookForm(book);
+    } catch (error) { alert('Error loading book'); }
+}
+
+async function handleFormSubmit(event) {
+    event.preventDefault();
+    try {
+        const bookId = document.getElementById('book-id').value;
+        const bookData = {
+            title: document.getElementById('title').value,
+            author: document.getElementById('author').value,
+            isbn: document.getElementById('isbn').value
+        };
+        
+        if (bookId) await api.updateBook(bookId, bookData);
+        else await api.createBook(bookData);
+        
+        hideBookForm();
+        await loadBooks(currentFilter === 'all' ? null : currentFilter);
+    } catch (error) { alert('Error saving book: ' + error.message); }
+}
+
 function updateStatistics(stats) {
     document.getElementById('stat-available').textContent = stats.available;
     document.getElementById('stat-borrowed').textContent = stats.borrowed;
     document.getElementById('stat-total').textContent = stats.total;
 }
 
-// Filter books
-function filterBooks(status) {
-    currentFilter = status;
-    
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.filter === status) {
-            btn.classList.add('active');
-        }
-    });
-    
-    loadBooks(status === 'all' ? null : status);
-}
-
-// Show/hide loading
 function showLoading() {
     document.getElementById('loading').style.display = 'block';
     document.getElementById('book-list').style.display = 'none';
@@ -105,111 +138,4 @@ function showLoading() {
 function hideLoading() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('book-list').style.display = 'grid';
-}
-
-// Modal functions
-function showAddModal() {
-    document.getElementById('modal-title').textContent = 'Add New Book';
-    document.getElementById('book-form').reset();
-    document.getElementById('book-id').value = '';
-    document.getElementById('book-modal').style.display = 'flex';
-}
-
-function closeModal() {
-    document.getElementById('book-modal').style.display = 'none';
-}
-
-// Form submit
-async function handleSubmit(event) {
-    event.preventDefault();
-    
-    const id = document.getElementById('book-id').value;
-    const bookData = {
-        title: document.getElementById('title').value,
-        author: document.getElementById('author').value,
-        isbn: document.getElementById('isbn').value
-    };
-    
-    try {
-        if (id) {
-            await api.updateBook(id, bookData);
-            alert('Book updated successfully!');
-        } else {
-            await api.createBook(bookData);
-            alert('Book added successfully!');
-        }
-        
-        closeModal();
-        loadBooks(currentFilter === 'all' ? null : currentFilter);
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-// Edit book
-async function editBook(id) {
-    try {
-        const book = await api.getBookById(id);
-        
-        document.getElementById('modal-title').textContent = 'Edit Book';
-        document.getElementById('book-id').value = book.id;
-        document.getElementById('title').value = book.title;
-        document.getElementById('author').value = book.author;
-        document.getElementById('isbn').value = book.isbn;
-        
-        document.getElementById('book-modal').style.display = 'flex';
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-// Borrow book
-async function borrowBook(id) {
-    if (!confirm('Do you want to borrow this book?')) return;
-    
-    try {
-        await api.borrowBook(id);
-        alert('Book borrowed successfully!');
-        loadBooks(currentFilter === 'all' ? null : currentFilter);
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-// Return book
-async function returnBook(id) {
-    if (!confirm('Do you want to return this book?')) return;
-    
-    try {
-        await api.returnBook(id);
-        alert('Book returned successfully!');
-        loadBooks(currentFilter === 'all' ? null : currentFilter);
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-// Delete book
-async function deleteBook(id) {
-    if (!confirm('Are you sure?')) return;
-    
-    try {
-        await api.deleteBook(id);
-        alert('Book deleted successfully!');
-        loadBooks(currentFilter === 'all' ? null : currentFilter);
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-// Escape HTML
-function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m]);
 }
